@@ -1,0 +1,47 @@
+#! /usr/bin/env python
+
+from sys import argv
+import binascii
+
+def encrypt(input, rounds=1):
+    return [process_byte(x, rounds) for x in input]
+
+def process_byte_single(x):
+    output = 0
+
+    for i in range(0, 8):
+        prev_bit = (i - 1 + 8) % 8
+        next_bit = (i + 1) % 8
+        if (x & (1 << i)):
+            output |= (1 << next_bit)
+            output |= (1 << prev_bit)
+
+    return output
+
+def process_byte(x, rounds = 1):
+    output = x
+
+    for r in range(0, rounds):
+        output = process_byte_single(output)
+
+    return output
+
+def encrypt_file(path, rounds=1):
+    file = open(path, "rb")
+    outfile = open(path + ".hpenc", "wb")
+    try:
+        input = file.read(1)
+        while input:
+            outfile.write(chr(process_byte(ord(input), rounds)))
+            input = file.read(1)
+    finally:
+        file.close()
+        outfile.close()
+
+if __name__ == "__main__":
+    if len(argv) == 1:
+        print("usage: %s filepath [rounds]" % (argv[0],))
+    elif len(argv) == 2:
+        encrypt_file(argv[1])
+    elif len(argv) == 3:
+        encrypt_file(argv[1], int(argv[2]))
